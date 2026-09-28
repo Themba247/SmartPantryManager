@@ -1,10 +1,12 @@
 package com.example.smartpantrymanager;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -36,26 +38,22 @@ public class MainActivity extends AppCompatActivity {
         adapter = new PantryAdapter(new ArrayList<>(), new PantryAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(PantryItem item) {
-                // TEMPORARY: will open the Edit screen in the next step
-                Toast.makeText(MainActivity.this, "Tapped: " + item.getName(), Toast.LENGTH_SHORT).show();
+                // Open the Add/Edit screen and pass this item's id (edit mode)
+                Intent intent = new Intent(MainActivity.this, AddEditActivity.class);
+                intent.putExtra(AddEditActivity.EXTRA_ITEM_ID, item.getId());
+                startActivity(intent);
             }
 
             @Override
             public void onItemLongClick(PantryItem item) {
-                // TEMPORARY: will become a delete confirmation in the next step
-                db.deleteItem(item.getId());
-                loadItems();
+                confirmDelete(item);
             }
         });
         recyclerPantry.setAdapter(adapter);
 
-        // TEMPORARY: adds a sample item so we can test the list.
-        // Will open the Add screen in the next step.
-        fabAdd.setOnClickListener(v -> {
-            int count = db.getAllItems().size() + 1;
-            db.addItem(new PantryItem(0, "Sample item " + count, 2, "pcs", ""));
-            loadItems();
-        });
+        // Open the Add/Edit screen with no id (add mode)
+        fabAdd.setOnClickListener(v ->
+                startActivity(new Intent(MainActivity.this, AddEditActivity.class)));
     }
 
     // Reload the list every time this screen comes back into view
@@ -65,11 +63,23 @@ public class MainActivity extends AppCompatActivity {
         loadItems();
     }
 
+    private void confirmDelete(PantryItem item) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete ingredient")
+                .setMessage("Delete " + item.getName() + " from your pantry?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    db.deleteItem(item.getId());
+                    loadItems();
+                    Toast.makeText(this, "Ingredient deleted", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
     private void loadItems() {
         List<PantryItem> items = db.getAllItems();
         adapter.setItems(items);
 
-        // Show the friendly message when there is nothing to display
         if (items.isEmpty()) {
             tvEmpty.setVisibility(View.VISIBLE);
             recyclerPantry.setVisibility(View.GONE);
