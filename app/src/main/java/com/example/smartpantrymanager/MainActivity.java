@@ -8,14 +8,15 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.List;
-import androidx.appcompat.app.AppCompatDelegate;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -55,6 +56,23 @@ public class MainActivity extends AppCompatActivity {
         // Open the Add/Edit screen with no id (add mode)
         fabAdd.setOnClickListener(v ->
                 startActivity(new Intent(MainActivity.this, AddEditActivity.class)));
+
+        // Bottom navigation: switch between Pantry, Suggested Recipes and Settings
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        bottomNav.setSelectedItemId(R.id.nav_pantry);
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_pantry) {
+                return true; // already here
+            } else if (id == R.id.nav_suggested) {
+                startActivity(new Intent(MainActivity.this, SuggestedActivity.class));
+                return true;
+            } else if (id == R.id.nav_settings) {
+                startActivity(new Intent(MainActivity.this, SettingsActivity.class));
+                return true;
+            }
+            return false;
+        });
     }
 
     // Reload the list every time this screen comes back into view

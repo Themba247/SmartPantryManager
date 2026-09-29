@@ -302,6 +302,49 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.delete("pantry", "id = ?", new String[]{String.valueOf(id)});
     }
 
+    // Reads every recipe and its ingredients from the database
+    public List<Recipe> getAllRecipes() {
+        List<Recipe> recipes = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+
+        Cursor recipeCursor = db.rawQuery("SELECT * FROM recipes ORDER BY name COLLATE NOCASE", null);
+        try {
+            while (recipeCursor.moveToNext()) {
+                int recipeId = recipeCursor.getInt(recipeCursor.getColumnIndexOrThrow("id"));
+                String name = recipeCursor.getString(recipeCursor.getColumnIndexOrThrow("name"));
+                String steps = recipeCursor.getString(recipeCursor.getColumnIndexOrThrow("steps"));
+
+                List<RecipeIngredient> ingredients = new ArrayList<>();
+                Cursor ingCursor = db.rawQuery(
+                        "SELECT * FROM recipe_ingredients WHERE recipe_id = ?",
+                        new String[]{String.valueOf(recipeId)});
+                try {
+                    while (ingCursor.moveToNext()) {
+                        ingredients.add(new RecipeIngredient(
+                                ingCursor.getString(ingCursor.getColumnIndexOrThrow("name")),
+                                ingCursor.getDouble(ingCursor.getColumnIndexOrThrow("quantity")),
+                                ingCursor.getString(ingCursor.getColumnIndexOrThrow("unit"))));
+                    }
+                } finally {
+                    ingCursor.close();
+                }
+
+                recipes.add(new Recipe(recipeId, name, steps, ingredients));
+            }
+        } finally {
+            recipeCursor.close();
+        }
+        return recipes;
+    }
+
+    // Reads a single recipe (used by the Recipe Detail screen)
+    public Recipe getRecipeById(int recipeId) {
+        for (Recipe r : getAllRecipes()) {
+            if (r.getId() == recipeId) return r;
+        }
+        return null;
+    }
+
     // Helper: turns one database row into a PantryItem object
     private PantryItem cursorToItem(Cursor c) {
         return new PantryItem(
